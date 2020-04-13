@@ -1,0 +1,161 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8" />
+    <title>Les baladins de la Xème</title>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.16.2/dist/phaser.js"></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+
+    var config = {
+        type: Phaser.AUTO,
+        pixelArt: true,
+        scale: {
+            mode: Phaser.Scale.FIT,
+            autoCenter: Phaser.Scale.CENTER_BOTH,
+            width: 1024,
+            height: 576
+        },
+        physics: {
+            default: "arcade",
+            arcade: {debug: false, gravity: {y:0}}
+        }
+    };
+    var game = new Phaser.Game(config);
+    game.scene.add('Map', {preload: map_preload, create: map_create, update: map_update});
+    game.scene.add('Boot', {preload: boot_preload, create: boot_create});
+    game.scene.start('Boot');
+    
+    
+    let cursors;
+    let player;
+
+    function boot_preload(){
+        this.load.image('logo', 'assets/game_logo.png');
+    }
+    function boot_create(){
+        this.scene.start('Map');
+    }
+    
+    function map_preload ()
+    {
+        this.load.image('tiles', 'assets/tuxmon-sample-32px.png');
+        this.load.image('tiles-chefs', 'assets/chefs.png');
+        this.load.tilemapTiledJSON('map', 'assets/lln.json');
+        this.load.spritesheet('dude', 'assets/baladins.png', { frameWidth: 64, frameHeight: 64 });
+        this.load.spritesheet('chef', 'assets/chefs.png', { frameWidth: 64, frameHeight: 64 });
+    }
+
+    function map_create ()
+    {
+        const map = this.make.tilemap({ key: "map" });
+
+        const tileset1 = map.addTilesetImage("Tuxmon", "tiles");
+        const tileset2 = map.addTilesetImage("Chefs", "tiles-chefs");
+
+        const below1Layer = map.createStaticLayer("B1", [tileset1,tileset2], 0, 0);
+        const below2Layer = map.createStaticLayer("B2", [tileset1,tileset2], 0, 0);
+        const same1Layer = map.createStaticLayer("World", [tileset1,tileset2], 0, 0);
+        const above1Layer = map.createStaticLayer("A1", [tileset1,tileset2], 0, 0);
+        
+          
+        same1Layer.setCollisionByProperty({ collides: true });
+        above1Layer.setDepth(10);
+        
+        // Player
+        const spawnPoint = map.findObject("Objects", obj => obj.name === "Spawn Point");
+        const C1Point = map.findObject("Objects", obj => obj.name === "Chef1");
+        player = this.physics.add.sprite(spawnPoint.x, spawnPoint.y, 'dude').setSize(26,20).setOffset(19,40);
+        
+        this.physics.add.collider(player, same1Layer);
+        
+        this.anims.create({
+            key: 'left',
+            frames: this.anims.generateFrameNumbers('dude', { start: 4, end: 7 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        this.anims.create({key: 'pos-left',frames: [ { key: 'dude', frame: 4 } ],frameRate: 20});
+        this.anims.create({key: 'pos-right',frames: [ { key: 'dude', frame: 8 } ],frameRate: 20});
+        this.anims.create({key: 'pos-up',frames: [ { key: 'dude', frame: 12 } ],frameRate: 20});
+        this.anims.create({key: 'pos-down',frames: [ { key: 'dude', frame: 0 } ],frameRate: 20});                
+
+        this.anims.create({
+            key: 'right',
+            frames: this.anims.generateFrameNumbers('dude', { start: 8, end: 11 }),
+            frameRate: 10,
+            repeat: -1
+        });
+        
+        this.anims.create({
+            key: 'up',
+            frames: this.anims.generateFrameNumbers('dude', { start: 12, end: 15 }),
+            frameRate: 10,
+            repeat: -1
+        });
+        
+        this.anims.create({
+            key: 'down',
+            frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
+            frameRate: 10,
+            repeat: -1
+        });
+        
+        // Camera
+        const camera = this.cameras.main;
+        camera.startFollow(player);
+        camera.setBounds(0,0, map.widthInPixels, map.heightInPixels);
+        
+        cursors = this.input.keyboard.createCursorKeys();
+    }
+
+    function map_update (){
+        const speed = 175;
+        const prevVelocity = player.body.velocity.clone();
+        
+        player.body.setVelocity(0);
+        
+        if (cursors.left.isDown){
+            player.body.setVelocityX(-speed);
+        }
+        else if (cursors.right.isDown){
+            player.body.setVelocityX(speed);
+        }
+        
+         
+        if (cursors.up.isDown) {
+            player.body.setVelocityY(-speed);
+        }
+        else if (cursors.down.isDown) {
+            player.body.setVelocityY(speed);
+        }
+            
+        player.body.velocity.normalize().scale(speed);
+        
+        if (cursors.left.isDown) {
+            player.anims.play("left", true);
+        } else if (cursors.right.isDown) {
+            player.anims.play("right", true);
+        } else if (cursors.up.isDown) {
+            player.anims.play("up", true);
+        } else if (cursors.down.isDown) {
+            player.anims.play("down", true);
+        } else {
+            if (prevVelocity.x < 0) player.anims.play("pos-left", true);
+            else if (prevVelocity.x > 0) player.anims.play("pos-right", true);
+            else if (prevVelocity.y < 0) player.anims.play("pos-up", true);
+            else if (prevVelocity.y > 0) player.anims.play("pos-down", true);
+        }
+    }
+</script>
+
+</body>
+</html>
