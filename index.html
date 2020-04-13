@@ -28,9 +28,13 @@
             arcade: {debug: false, gravity: {y:0}}
         }
     };
+   
+    
     var game = new Phaser.Game(config);
     game.scene.add('Map', {preload: map_preload, create: map_create, update: map_update});
     game.scene.add('Boot', {preload: boot_preload, create: boot_create});
+    game.scene.add('Preloader', {preload: preloader_preload, create: preloader_create});
+    game.scene.add('Title', {create: title_create});
     game.scene.start('Boot');
     
     
@@ -39,18 +43,47 @@
 
     function boot_preload(){
         this.load.image('logo', 'assets/game_logo.png');
+        
     }
     function boot_create(){
-        this.scene.start('Map');
+        this.scene.start('Preloader');
+    }
+    
+    function preloader_preload(){
+        this.add.image(512,288, 'logo');
+
+        this.load.image('tiles', 'assets/tuxmon-sample-32px.png');
+        this.load.image('tiles-chefs', 'assets/chefs.png');
+        this.load.image('icon_gamepad', 'assets/icon/gamepad.png');
+        this.load.tilemapTiledJSON('map', 'assets/lln.json');
+        this.load.spritesheet('dude', 'assets/baladinsjeuenligne.png', { frameWidth: 64, frameHeight: 64 });
+        this.load.spritesheet('chef', 'assets/chefs.png', { frameWidth: 64, frameHeight: 64 });
+    }
+    
+    function preloader_create(){
+        this.scene.start('Title');
+    }
+    
+    function title_create(){
+        this.gameIcon = this.add.sprite(512,288,'icon_gamepad').setInteractive().setScale(0.25);
+        this.gameText = this.add.text(512, 220, 'Jouer', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5);
+        this.gameBox  = this.add.rectangle(437,188,150,150).setOrigin(0);
+        this.gameBox.setStrokeStyle(2, 0x0000ff);
+        this.gameBox.setInteractive();
+        this.gameBox.on('pointerdown', function(pointer) { this.scene.start('Map'); }.bind(this));
+        this.gameBox.on('pointerover', function(pointer) { 
+            this.gameBox.setFillStyle(0x0000ff, 0.3); 
+            this.gameIcon.setScale(0.30); 
+        }.bind(this));
+        this.gameBox.on('pointerout', function(pointer) { 
+            this.gameBox.setFillStyle(0x0000ff, 0);  
+            this.gameIcon.setScale(0.25); 
+        }.bind(this));
     }
     
     function map_preload ()
     {
-        this.load.image('tiles', 'assets/tuxmon-sample-32px.png');
-        this.load.image('tiles-chefs', 'assets/chefs.png');
-        this.load.tilemapTiledJSON('map', 'assets/lln.json');
-        this.load.spritesheet('dude', 'assets/baladins.png', { frameWidth: 64, frameHeight: 64 });
-        this.load.spritesheet('chef', 'assets/chefs.png', { frameWidth: 64, frameHeight: 64 });
+
     }
 
     function map_create ()
